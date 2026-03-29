@@ -3,83 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR Collision Fix</title>
+    <title>Mobile AR Collision</title>
 
+    <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+
+    <!-- AR.js -->
     <script src="./aframe-ar-main/dist/aframe-ar.min.js"></script>
 </head>
-<body>
+
+<body style="margin:0; overflow:hidden;">
 
 <script>
 function showMessage(message){
     let hud = document.querySelector("#hud");
     if(hud){
-        hud.setAttribute('value', message); // FIXED
+        hud.setAttribute('value', message);
     }
 }
 
+// Register component (optional init message)
 AFRAME.registerComponent('ar-logic',{
     init: function(){
-        showMessage('ar-logic is running..');
-    },
-
-    tick: function(){
-        let cam = document.querySelector("#cam"); // FIXED
-        if(!cam || !cam.components.raycaster){
-            return;
-        }
-
-        let circle = document.querySelector("#circle");
-        let intersection = cam.components.raycaster.getIntersection(circle);
-
-        if(!intersection){
-            return;
-        }
-
-        showMessage(
-            'Collision Detected!! ' +
-            intersection.point.x.toFixed(2) + " " +
-            intersection.point.z.toFixed(2)
-        );
-
-        circle.setAttribute('position', intersection.point);
+        showMessage('AR Ready...');
     }
 });
 
+// 👉 Mobile Touch Collision Detection
 window.addEventListener('touchstart', function(){
-    let box = document.querySelector("#box");
-    let circle = document.querySelector("#circle");
 
-    let pos = circle.getAttribute('position');
-    box.setAttribute('position', pos);
+    let cam = document.querySelector("#cam");
+    let circle = document.querySelector("#circle");
+    let box = document.querySelector("#box");
+
+    if(!cam || !cam.components.raycaster){
+        showMessage("Raycaster not ready");
+        return;
+    }
+
+    // Refresh raycaster objects
+    cam.components.raycaster.refreshObjects();
+
+    // Check intersection
+    let intersection = cam.components.raycaster.getIntersection(circle);
+
+    if(intersection){
+        let point = intersection.point;
+
+        showMessage(
+            "Hit: " +
+            point.x.toFixed(2) + ", " +
+            point.y.toFixed(2) + ", " +
+            point.z.toFixed(2)
+        );
+
+        // Move circle
+        circle.setAttribute('position', point);
+
+        // Move 3D model
+        box.setAttribute('position', point);
+
+    } else {
+        showMessage("No hit detected");
+    }
 });
 </script>
 
-<a-scene ar ar-logic>
+<!-- AR Scene -->
+<a-scene 
+    embedded
+    arjs="sourceType: webcam; debugUIEnabled: false;"
+    ar-logic>
 
-    <!-- FIXED RAYCASTER -->
-    <a-camera id="cam" 
-        raycaster="objects: #circle"
-        cursor="rayOrigin: mouse">
+    <!-- Camera -->
+    <a-camera id="cam"
+        position="0 1.6 0"
+        raycaster="objects: .clickable; far: 10">
 
+        <!-- HUD Text -->
         <a-text id="hud"
-            value="Computer"
-            position="0 -0.1 -0.25"
-            align="center">
+            value="Initializing..."
+            position="0 -0.3 -0.8"
+            align="center"
+            color="white">
         </a-text>
 
     </a-camera>
 
+    <!-- Target Circle -->
     <a-ring id="circle"
+        class="clickable"
         rotation="-90 0 0"
-        inner-radius="0.01"
-        outer-radius="0.02">
+        inner-radius="0.02"
+        outer-radius="0.03"
+        color="yellow"
+        position="0 0 -1">
     </a-ring>
 
+    <!-- 3D Model -->
     <a-gltf-model id="box"
         src="desktop_computer.glb"
-        scale="1 1 1"
-        position="0 0 0">
+        scale="0.5 0.5 0.5"
+        position="0 0 -1">
     </a-gltf-model>
 
 </a-scene>
