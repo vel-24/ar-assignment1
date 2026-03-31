@@ -3,111 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mobile AR Collision</title>
-
-    <!-- A-Frame -->
+    <title>Document</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-
-    <!-- AR.js -->
     <script src="./aframe-ar-main/dist/aframe-ar.min.js"></script>
 </head>
+<body>
+    <script>
+        function showMessage(message){
+                let hud=document.querySelector("#hud")
+                if(hud){
+                    hud.setAttribute('vale',message)
+                }
+        }
 
-<body style="margin:0; overflow:hidden;">
+        AFRAME.registerComponent('ar-logic',{
+            init: function(){
+                showMessage('ar-logic is running..')
 
-<script>
-function showMessage(message){
-    let hud = document.querySelector("#hud");
-    if(hud){
-        hud.setAttribute('value', message);
-    }
-}
+            },
+            tick: function(){
+                let cam=document.querySelector("cam");
+                if(!cam|| !cam.components.raycaster){
+                    return;
+                }
+                let intersection=cam.components.raycaster.getIntersection(document.querySelector("#circle"));
+                if(!intersection){
+                    return;
+                }
+                showMessage('Collision Detected!!'+intersection.point.x.toFixed(2)+" "+intersection.point.z.toFixed(2));
+                let circle=document.querySelector("#circle");
+                circle.setAttribute('position',intersection.point);
+            }
 
-// Register component (optional init message)
-AFRAME.registerComponent('ar-logic',{
-    init: function(){
-        showMessage('AR Ready...');
-    }
-});
+        });
+        window.addEventListener('touchstart',function(){
+            let box=document.querySelector("#box");
+            let circle=document.querySelector("#circle");
+            let pos=circle.getAttribute('position');
+            box.setAttribute('position',pos);
 
-// 👉 Mobile Touch Collision Detection
-window.addEventListener('touchstart', function(){
+        });
+    </script>
+    <a-scene ar ar-logic>
+        <a-camera id="cam" ar-raycaster="objects:none;">
+            <a-text id="hud" value="Computer" position="0 -0.1 -0.25" align="center" wrap-count="800"></a-text>
+        </a-camera>
+        <a-ring id="circle" rotation="-90 0 0" inner-radius="0.01" outer-radius="0.02"></a-ring>
+        <a-gltf-model id="box" src="desktop_computer.glb" scale="1 1 1" position="0 0 0"></a-gltf-model>
 
-    let cam = document.querySelector("#cam");
-    let circle = document.querySelector("#circle");
-    let box = document.querySelector("#box");
-
-    if(!cam || !cam.components.raycaster){
-        showMessage("Raycaster not ready");
-        return;
-    }
-
-    // Refresh raycaster objects
-    cam.components.raycaster.refreshObjects();
-
-    // Check intersection
-    let intersection = cam.components.raycaster.getIntersection(circle);
-
-    if(intersection){
-        let point = intersection.point;
-
-        showMessage(
-            "Hit: " +
-            point.x.toFixed(2) + ", " +
-            point.y.toFixed(2) + ", " +
-            point.z.toFixed(2)
-        );
-
-        // Move circle
-        circle.setAttribute('position', point);
-
-        // Move 3D model
-        box.setAttribute('position', point);
-
-    } else {
-        showMessage("No hit detected");
-    }
-});
-</script>
-
-<!-- AR Scene -->
-<a-scene 
-    embedded
-    arjs="sourceType: webcam; debugUIEnabled: false;"
-    ar-logic>
-
-    <!-- Camera -->
-    <a-camera id="cam"
-        position="0 1.6 0"
-        raycaster="objects: .clickable; far: 10">
-
-        <!-- HUD Text -->
-        <a-text id="hud"
-            value="Initializing..."
-            position="0 -0.3 -0.8"
-            align="center"
-            color="white">
-        </a-text>
-
-    </a-camera>
-
-    <!-- Target Circle -->
-    <a-ring id="circle"
-        class="clickable"
-        rotation="-90 0 0"
-        inner-radius="0.02"
-        outer-radius="0.03"
-        color="yellow"
-        position="0 0 -1">
-    </a-ring>
-
-    <!-- 3D Model -->
-    <a-gltf-model id="box"
-        src="desktop_computer.glb"
-        scale="0.5 0.5 0.5"
-        position="0 0 -1">
-    </a-gltf-model>
-
-</a-scene>
-
+    </a-scene>
 </body>
 </html>
